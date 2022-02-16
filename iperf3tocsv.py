@@ -1,19 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
     Version: 1.1
-
     Author: Kirth Gersen
     Date created: 6/5/2016
     Date modified: 9/12/2016
     Python Version: 2.7
-
 """
 
 from __future__ import print_function
 import json
 import sys
 import csv
+import os
 
 db = {}
 
@@ -72,49 +71,63 @@ def process(js,csvwriter):
         pass
         return False 
     try:
+        start = []
+        end = []
+        duration = []
+        transfer = []
+        bandwidth = []        
+        length = len(obj["intervals"])
+        
         # caveat: assumes multiple streams are all from same IP so we take the 1st one
-        # todo: handle errors and missing elements
         ip = (obj["start"]["connected"][0]["remote_host"]).encode('ascii', 'ignore')
         local_port = obj["start"]["connected"][0]["local_port"]
         remote_port = obj["start"]["connected"][0]["remote_port"]
-
-        sent = obj["end"]["sum_sent"]["bytes"]
-        rcvd = obj["end"]["sum_received"]["bytes"]
-        sent_speed = obj["end"]["sum_sent"]["bits_per_second"] / 1000 / 1000
-        rcvd_speed = obj["end"]["sum_received"]["bits_per_second"] / 1000 / 1000
+        
+        for i in range(length):
+            start.append(obj["intervals"][i]["streams"][0]["start"])
+            end.append(obj["intervals"][i]["streams"][0]["end"])
+            duration.append(obj["intervals"][i]["streams"][0]["seconds"])
+            transfer.append(obj["intervals"][i]["streams"][0]["bytes"])
+            bandwidth.append(obj["intervals"][i]["streams"][0]["bits_per_second"])
+            
         
 
-        reverse = obj["start"]["test_start"]["reverse"]
-        time = (obj["start"]["timestamp"]["time"]).encode('ascii', 'ignore')
-        cookie = (obj["start"]["cookie"]).encode('ascii', 'ignore')
-        protocol = (obj["start"]["test_start"]["protocol"]).encode('ascii', 'ignore')
-        duration = obj["start"]["test_start"]["duration"]
-        num_streams = obj["start"]["test_start"]["num_streams"]
-        if reverse not in [0, 1]:
-            sys.exit("unknown reverse")
-
-        s = 0
-        r = 0
-        if ip in db:
-            (s, r) = db[ip]
-
-        if reverse == 0:
-            r += rcvd
-            sent = 0
-            sent_speed = 0
-        else:
-            s += sent
-            rcvd = 0
-            rcvd_speed = 0
-
-        db[ip] = (s, r)
-
-        csvwriter.writerow([time, ip, local_port, remote_port, duration, protocol, num_streams, cookie, sent, sent_speed, rcvd, rcvd_speed, s, r])
+        csvwriter.writerow(["Start","End","Duration","Time Unit","Transfer","Transfer Unit","Bandwidth","Bitrate Unit"])
+        for i in range(length):
+            if transfer[i] > 1000000000:
+                transfer[i] /= 1000000000
+                transferNot = "GBytes"
+            elif transfer[i] > 1000000:
+                transfer[i] /= 1000000
+                transferNot = "MBytes"
+            elif transfer[i] > 1000:
+                transfer[i] /= 1000
+                transferNot = "KBytes"
+            else:
+                transferNot = "Bytes"
+                
+            if bandwidth[i] > 1000000000:
+                bandwidth[i] /= 1000000000
+                bandwidthNot = "Gbits/sec"
+            elif bandwidth[i] > 1000000:
+                bandwidth[i] /= 1000000
+                bandwidthNot = "Mbits/sec"
+            elif bandwidth[i] > 1000:
+                bandwidth[i] /= 1000
+                bandwidthNot = "Kbits/sec"
+            else:
+                bandwidthNot = "Bits/sec"
+                
+            csvwriter.writerow([start[i],end[i],duration[i],"Seconds",transfer[i],transferNot,bandwidth[i],bandwidthNot])
+        
         return True
-    except:
-       eprint("error or bogus test:", sys.exc_info()[0])
-       pass
-       return False
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        eprint(exc_type, fname, exc_tb.tb_lineno)
+        eprint("error or bogus test:", sys.exc_info()[0])
+        pass
+    return False
 
 def dumpdb(database):
     """ dump db to text """
