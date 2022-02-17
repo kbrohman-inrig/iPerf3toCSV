@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-    Version: 1.1
-    Author: Kirth Gersen
-    Date created: 6/5/2016
-    Date modified: 9/12/2016
-    Python Version: 2.7
-"""
-
 from __future__ import print_function
 import json
 import sys
@@ -25,13 +17,6 @@ def main():
 
     csv.register_dialect('iperf3log', delimiter=',', quoting=csv.QUOTE_MINIMAL)
     csvwriter = csv.writer(sys.stdout, 'iperf3log')
-
-    if len(sys.argv) == 2:
-        if (sys.argv[1] != "-h"):
-            sys.exit("unknown option")
-        else:
-            csvwriter.writerow(["date", "ip", "localport", "remoteport", "duration", "protocol", "num_streams", "cookie", "sent", "sent_mbps", "rcvd", "rcvd_mbps", "totalsent", "totalreceived"])
-            sys.exit(0)
 
     # accummulate volume per ip in a dict
     db = {}
@@ -92,7 +77,7 @@ def process(js,csvwriter):
             
         
 
-        csvwriter.writerow(["Start","End","Duration","Time Unit","Transfer","Transfer Unit","Bandwidth","Bitrate Unit"])
+        csvwriter.writerow(["Start","End","Duration","Time Unit","Transfer","Transfer Unit","Bandwidth","Bandwidth Unit"])
         for i in range(length):
             if transfer[i] > 1000000000:
                 transfer[i] /= 1000000000
