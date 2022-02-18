@@ -15,8 +15,8 @@ def main():
     global db
     """main program"""
 
-    csv.register_dialect('iperf3log', delimiter=',', quoting=csv.QUOTE_MINIMAL)
-    csvwriter = csv.writer(sys.stdout, 'iperf3log')
+    #csv.register_dialect('iperf3log', delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    
 
     # accummulate volume per ip in a dict
     db = {}
@@ -31,24 +31,19 @@ def main():
         i += 1
         if line == "{\n":
             jsonstr = "{"
-            #print("found open line %d",i)
             m = True
         elif line == "}\n":
             jsonstr += "}"
-            #print("found close line %d",i)
             if m:
-                process(jsonstr,csvwriter)
+                process(jsonstr)
             m = False
             jsonstr = ""
         else:
             if m:
                 jsonstr += line
-            #else:
-                #print("bogus at line %d = %s",i,line)
 
-def process(js,csvwriter):
+def process(js):
     global db
-    #print(js)
     try:
         obj = json.loads(js)
     except:
@@ -76,32 +71,33 @@ def process(js,csvwriter):
             bandwidth.append(obj["intervals"][i]["streams"][0]["bits_per_second"])
             
         
-
-        csvwriter.writerow(["Start","End","Duration","Time Unit","Transfer","Transfer Unit","Bandwidth","Bandwidth Unit"])
-        for i in range(length):
-            if transfer[i] > 1000000000:
-                transfer[i] /= 1000000000
-                transferNot = "GBytes"
-            elif transfer[i] > 1000000:
-                transfer[i] /= 1000000
-                transferNot = "MBytes"
-            elif transfer[i] > 1000:
-                transfer[i] /= 1000
-                transferNot = "KBytes"
-            else:
-                transferNot = "Bytes"
+        with open('Log.csv', 'w', encoding='UTF8', newline='') as f:
+            csvwriter = csv.writer(f)#, 'iperf3log')
+            for i in range(length):
+                if transfer[i] > 1000000000:
+                    transfer[i] /= 1000000000
+                    transferNot = "GBytes"
+                elif transfer[i] > 1000000:
+                    transfer[i] /= 1000000
+                    transferNot = "MBytes"
+                elif transfer[i] > 1000:
+                    transfer[i] /= 1000
+                    transferNot = "KBytes"
+                else:
+                    transferNot = "Bytes"
+                    
+                if bandwidth[i] > 1000000000:
+                    bandwidth[i] /= 1000000000
+                    bandwidthNot = "Gbits/sec"
+                elif bandwidth[i] > 1000000:
+                    bandwidth[i] /= 1000000
+                    bandwidthNot = "Mbits/sec"
+                elif bandwidth[i] > 1000:
+                    bandwidth[i] /= 1000
+                    bandwidthNot = "Kbits/sec"
+                else:
+                    bandwidthNot = "Bits/sec"
                 
-            if bandwidth[i] > 1000000000:
-                bandwidth[i] /= 1000000000
-                bandwidthNot = "Gbits/sec"
-            elif bandwidth[i] > 1000000:
-                bandwidth[i] /= 1000000
-                bandwidthNot = "Mbits/sec"
-            elif bandwidth[i] > 1000:
-                bandwidth[i] /= 1000
-                bandwidthNot = "Kbits/sec"
-            else:
-                bandwidthNot = "Bits/sec"
                 
             csvwriter.writerow([start[i],end[i],duration[i],"Seconds",transfer[i],transferNot,bandwidth[i],bandwidthNot])
         
