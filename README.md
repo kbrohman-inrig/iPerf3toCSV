@@ -10,6 +10,6 @@
     
  Client:
 
-    iperf3 -s -J | python -u iperf3tocsv.py -c
+    iperf3 -c {Server-IP} -J | python -u iperf3tocsv.py -c
 
 
