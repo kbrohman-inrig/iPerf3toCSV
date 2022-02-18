@@ -4,10 +4,12 @@
  - select server or client output
  - output to csv file
  
-usage:
-  For Server
+ Server:
+ 
     iperf3 -s -J | python -u iperf3tocsv.py -s
-  For Client
+    
+ Client:
+
     iperf3 -s -J | python -u iperf3tocsv.py -c
 
 
