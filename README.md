@@ -1,15 +1,13 @@
 # iperf3tocsv
 
  - set iperf3 server to ouput in json (-J)
- - parse the json for each test
- - sum usage per IP
- - output a log line
+ - select server or client output
+ - output to csv file
  
 usage:
+  For Server
+    iperf3 -s -J | python -u iperf3tocsv.py -s
+  For Client
+    iperf3 -s -J | python -u iperf3tocsv.py -c
 
-    iperf3 -s -J | python -u iperf3tocsv.py
-
-options:
-
-`python iperf3tocsv.py -h` will display the column headers and exit
 
