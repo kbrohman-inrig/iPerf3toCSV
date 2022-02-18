@@ -14,16 +14,22 @@ def eprint(*args, **kwargs):
 def main():
     global db
     """main program"""
-
-    #csv.register_dialect('iperf3log', delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        
+    if len(sys.argv) == 2:
+        if (sys.argv[1] == "-s"):
+            fileName="serverLog.csv"
+        elif (sys.argv[1] == "-c"):
+            fileName="clientLog.csv"
+        else:
+            sys.exit("Unknow option")
+    else:
+        sys.exit("No arguments passed")
     
-
     # accummulate volume per ip in a dict
     db = {}
     
     # highly specific json parser
     # assumes top { } pair are in single line
-
     jsonstr = ""
     i = 0
     m = False
@@ -35,14 +41,14 @@ def main():
         elif line == "}\n":
             jsonstr += "}"
             if m:
-                process(jsonstr)
+                process(jsonstr, fileName)
             m = False
             jsonstr = ""
         else:
             if m:
                 jsonstr += line
 
-def process(js):
+def process(js, fileName):
     global db
     try:
         obj = json.loads(js)
@@ -60,8 +66,9 @@ def process(js):
         
         # caveat: assumes multiple streams are all from same IP so we take the 1st one
         ip = (obj["start"]["connected"][0]["remote_host"]).encode('ascii', 'ignore')
-        local_port = obj["start"]["connected"][0]["local_port"]
-        remote_port = obj["start"]["connected"][0]["remote_port"]
+        localPort = obj["start"]["connected"][0]["local_port"]
+        remotePort = obj["start"]["connected"][0]["remote_port"]
+        dateTime = obj["start"]["timestamp"]["time"]
         
         for i in range(length):
             start.append(obj["intervals"][i]["streams"][0]["start"])
@@ -71,8 +78,8 @@ def process(js):
             bandwidth.append(obj["intervals"][i]["streams"][0]["bits_per_second"])
             
         
-        with open('Log.csv', 'w', encoding='UTF8', newline='') as f:
-            csvwriter = csv.writer(f)#, 'iperf3log')
+        with open(fileName, 'a', encoding='UTF8', newline='') as f:
+            csvwriter = csv.writer(f)
             for i in range(length):
                 if transfer[i] > 1000000000:
                     transfer[i] /= 1000000000
@@ -99,7 +106,7 @@ def process(js):
                     bandwidthNot = "Bits/sec"
                 
                 
-            csvwriter.writerow([start[i],end[i],duration[i],"Seconds",transfer[i],transferNot,bandwidth[i],bandwidthNot])
+                csvwriter.writerow([ip,localPort,remotePort,start[i],end[i],duration[i],"Seconds",transfer[i],transferNot,bandwidth[i],bandwidthNot,dateTime])
         
         return True
     except Exception as e:
